@@ -1,0 +1,128 @@
+{{!
+    Comparação de um pacote com esta instalação: execução e relatório de diferenças.
+}}
+<div class="local-progressrecovery">
+    <p><a href="{{packageurl}}">{{filename}}</a></p>
+    <p>{{#str}} comparisonintro, local_progressrecovery {{/str}}</p>
+
+    {{#running}}
+    <div id="local-progressrecovery-compare">
+        <p id="local-progressrecovery-compare-status">{{#str}} comparing, local_progressrecovery {{/str}}…</p>
+        <div class="progress"><div class="progress-bar" id="local-progressrecovery-compare-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
+        <p class="alert alert-danger hidden" id="local-progressrecovery-compare-error"></p>
+        <button type="button" class="btn btn-primary hidden" id="local-progressrecovery-compare-resume">{{#str}} resume, local_progressrecovery {{/str}}</button>
+    </div>
+    {{/running}}
+
+    {{^running}}
+    {{#isactive}}
+    <form method="post" action="{{formurl}}">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+        <input type="hidden" name="start" value="1">
+        <button type="submit" class="btn btn-primary">
+            {{#hasjob}}{{#str}} restartcompare, local_progressrecovery {{/str}}{{/hasjob}}
+            {{^hasjob}}{{#str}} startcompare, local_progressrecovery {{/str}}{{/hasjob}}
+        </button>
+    </form>
+    {{/isactive}}
+    {{/running}}
+
+    {{#done}}
+    {{#isactive}}<p><a class="btn btn-default" href="{{recoverurl}}">{{#str}} recovery, local_progressrecovery {{/str}}</a></p>{{/isactive}}
+    <h3>{{#str}} keyfacts, local_progressrecovery {{/str}}</h3>
+    <table class="generaltable">
+        <tbody>
+            <tr><th scope="row">{{#str}} copytime, local_progressrecovery {{/str}}</th><td>{{copytime}}</td></tr>
+            <tr><th scope="row">{{#str}} excluded, local_progressrecovery {{/str}}</th><td>{{excluded}}</td></tr>
+            <tr><th scope="row">{{#str}} finished, local_progressrecovery {{/str}}</th><td>{{finished}}</td></tr>
+            <tr><th scope="row">{{#str}} registrations, local_progressrecovery {{/str}}</th><td>{{registrations}}</td></tr>
+            <tr><th scope="row">{{#str}} accountstocreate, local_progressrecovery {{/str}}</th><td>{{accounts}} {{accountnames}}</td></tr>
+            <tr><th scope="row">{{#str}} usersremapped, local_progressrecovery {{/str}}</th><td>{{remapped}}</td></tr>
+            <tr><th scope="row">{{#str}} pendingviagroup, local_progressrecovery {{/str}}</th><td>{{viagroup}}</td></tr>
+            <tr><th scope="row">{{#str}} pendingnotgroup, local_progressrecovery {{/str}}</th><td>{{notgroup}}</td></tr>
+            {{#hasblocked}}<tr><th scope="row">{{#str}} blocked, local_progressrecovery {{/str}}</th><td>{{blockedlist}}</td></tr>{{/hasblocked}}
+        </tbody>
+    </table>
+
+    <h3>{{#str}} comparison, local_progressrecovery {{/str}}</h3>
+    <table class="generaltable">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} component, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} found, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} indestination, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} class_new, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} class_identical, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} class_changed, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} class_conflict, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} class_invalid, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} class_dest_newer, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} class_ignored, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} class_pending_enrol, local_progressrecovery {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#rows}}
+            <tr><td>{{name}}</td><td>{{found}}</td><td>{{indestination}}</td><td>{{new}}</td><td>{{identical}}</td><td>{{changed}}</td><td>{{conflict}}</td><td>{{invalid}}</td><td>{{dest_newer}}</td><td>{{ignored}}</td><td>{{pending}}</td></tr>
+            {{/rows}}
+        </tbody>
+    </table>
+
+    {{#hasattention}}
+    <h3>{{#str}} entitiesattention, local_progressrecovery {{/str}}</h3>
+    <table class="generaltable">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} entity, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} naturalkey, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} entitystatus, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} notes, local_progressrecovery {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#attention}}<tr><td><code>{{entity}}</code></td><td>{{natural}}</td><td>{{status}}</td><td><code>{{detail}}</code></td></tr>{{/attention}}
+        </tbody>
+    </table>
+    {{/hasattention}}
+
+    <h3>{{#str}} details, local_progressrecovery {{/str}}</h3>
+    <form method="get" action="{{formurl}}" class="form-inline">
+        <input type="hidden" name="id" value="{{id}}">
+        <label>{{#str}} component, local_progressrecovery {{/str}}
+            <select name="component" class="form-control"><option value="">{{#str}} all, local_progressrecovery {{/str}}</option>
+                {{#components}}<option value="{{id}}"{{#selected}} selected{{/selected}}>{{name}}</option>{{/components}}</select></label>
+        <label>{{#str}} classification, local_progressrecovery {{/str}}
+            <select name="classification" class="form-control"><option value="">{{#str}} all, local_progressrecovery {{/str}}</option>
+                {{#classes}}<option value="{{id}}"{{#selected}} selected{{/selected}}>{{name}}</option>{{/classes}}</select></label>
+        <label>{{#str}} course, local_progressrecovery {{/str}}
+            <select name="course" class="form-control"><option value="0">{{#str}} all, local_progressrecovery {{/str}}</option>
+                {{#courses}}<option value="{{id}}"{{#selected}} selected{{/selected}}>{{name}}</option>{{/courses}}</select></label>
+        <label>{{#str}} username, local_progressrecovery {{/str}}
+            <input type="text" name="username" class="form-control" value="{{username}}"></label>
+        <button type="submit" class="btn btn-default">{{#str}} filter, local_progressrecovery {{/str}}</button>
+    </form>
+    <p>{{itemtotal}} {{#str}} records, local_progressrecovery {{/str}} ·
+        <a href="{{csvurl}}">{{#str}} exportcsv, local_progressrecovery {{/str}}</a> ·
+        <a href="{{jsonurl}}">{{#str}} exportjson, local_progressrecovery {{/str}}</a></p>
+    {{#hasitems}}
+    <table class="generaltable">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} component, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} table, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} username, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} course, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} sourceid, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} destid, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} classification, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} reason, local_progressrecovery {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#items}}<tr><td>{{component}}</td><td><code>{{table}}</code></td><td>{{username}}</td><td>{{course}}</td><td>{{sourceid}}</td><td>{{destid}}</td><td>{{classification}}</td><td>{{reason}} {{#detail}}<code>{{detail}}</code>{{/detail}}</td></tr>{{/items}}
+        </tbody>
+    </table>
+    {{/hasitems}}
+    {{^hasitems}}<p>{{#str}} noitems, local_progressrecovery {{/str}}</p>{{/hasitems}}
+    {{/done}}
+</div>

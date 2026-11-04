@@ -1,0 +1,76 @@
+{{!
+    Painel do plugin: estado do último pacote, histórico e pacotes rejeitados.
+}}
+<div class="local-progressrecovery">
+    <h3>{{#str}} lastpackage, local_progressrecovery {{/str}}</h3>
+    {{#haslatest}}
+        {{#latest}}
+        <table class="generaltable">
+            <tbody>
+                <tr><th scope="row">{{#str}} file, local_progressrecovery {{/str}}</th><td><a href="{{url}}">{{filename}}</a></td></tr>
+                <tr><th scope="row">{{#str}} status, local_progressrecovery {{/str}}</th><td>{{status}}</td></tr>
+                <tr><th scope="row">{{#str}} compatibility, local_progressrecovery {{/str}}</th><td><span class="label {{badge}}">{{compatibility}}</span></td></tr>
+                <tr><th scope="row">{{#str}} sourceversion, local_progressrecovery {{/str}}</th><td>{{version}}</td></tr>
+                <tr><th scope="row">{{#str}} exported, local_progressrecovery {{/str}}</th><td>{{exported}}</td></tr>
+                <tr><th scope="row">{{#str}} period, local_progressrecovery {{/str}}</th><td>{{period}}</td></tr>
+                <tr><th scope="row">{{#str}} totalusers, local_progressrecovery {{/str}}</th><td>{{users}}</td></tr>
+                <tr><th scope="row">{{#str}} totalcourses, local_progressrecovery {{/str}}</th><td>{{courses}}</td></tr>
+                <tr><th scope="row">{{#str}} totalactivities, local_progressrecovery {{/str}}</th><td>{{activities}}</td></tr>
+                <tr><th scope="row">{{#str}} pendingissues, local_progressrecovery {{/str}}</th><td>{{pending}}</td></tr>
+                <tr><th scope="row">{{#str}} lastrecovery, local_progressrecovery {{/str}}</th><td>{{#str}} norecoveryyet, local_progressrecovery {{/str}}</td></tr>
+            </tbody>
+        </table>
+        {{/latest}}
+    {{/haslatest}}
+    {{^haslatest}}
+        <p>{{#str}} nopackage, local_progressrecovery {{/str}}</p>
+    {{/haslatest}}
+    <p><a class="btn btn-primary" href="{{uploadurl}}">{{#str}} upload, local_progressrecovery {{/str}}</a></p>
+
+    {{#haspackages}}
+    <h3>{{#str}} history, local_progressrecovery {{/str}}</h3>
+    <table class="generaltable">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} uploaded, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} file, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} period, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} size, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} status, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} compatibility, local_progressrecovery {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#packages}}
+            <tr>
+                <td>{{created}}</td>
+                <td><a href="{{url}}">{{filename}}</a></td>
+                <td>{{period}}</td>
+                <td>{{size}}</td>
+                <td>{{status}}</td>
+                <td><span class="label {{badge}}">{{compatibility}}</span></td>
+            </tr>
+            {{/packages}}
+        </tbody>
+    </table>
+    {{/haspackages}}
+
+    {{#hasrejections}}
+    <h3>{{#str}} rejections, local_progressrecovery {{/str}}</h3>
+    <table class="generaltable">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} date, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} operation, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} file, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} reason, local_progressrecovery {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#rejections}}
+            <tr><td>{{date}}</td><td>{{action}}</td><td>{{filename}}</td><td>{{check}}</td></tr>
+            {{/rejections}}
+        </tbody>
+    </table>
+    {{/hasrejections}}
+</div>

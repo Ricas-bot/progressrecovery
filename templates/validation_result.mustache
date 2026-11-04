@@ -1,0 +1,14 @@
+{{!
+    Passos da validação de um pacote.
+}}
+{{#haschecks}}
+<ul class="list-unstyled">
+    {{#checks}}
+    <li>
+        {{#ok}}<span class="label label-success">OK</span>{{/ok}}
+        {{^ok}}<span class="label label-danger">{{#str}} failed, local_progressrecovery {{/str}}</span>{{/ok}}
+        {{text}}
+    </li>
+    {{/checks}}
+</ul>
+{{/haschecks}}

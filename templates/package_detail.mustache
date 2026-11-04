@@ -1,0 +1,76 @@
+{{!
+    Detalhe de um pacote: manifesto, compatibilidade, integridade e conteúdo.
+}}
+<div class="local-progressrecovery">
+    <h3>{{#str}} manifest, local_progressrecovery {{/str}}</h3>
+    <table class="generaltable">
+        <tbody>
+            <tr><th scope="row">{{#str}} status, local_progressrecovery {{/str}}</th><td>{{status}}</td></tr>
+            <tr><th scope="row">{{#str}} packageid, local_progressrecovery {{/str}}</th><td><code>{{uuid}}</code></td></tr>
+            <tr><th scope="row">SHA-256</th><td><code>{{sha256}}</code></td></tr>
+            <tr><th scope="row">{{#str}} size, local_progressrecovery {{/str}}</th><td>{{size}}</td></tr>
+            <tr><th scope="row">{{#str}} sourceversion, local_progressrecovery {{/str}}</th><td>{{version}}</td></tr>
+            <tr><th scope="row">{{#str}} sourceidentifier, local_progressrecovery {{/str}}</th><td><code>{{identifier}}</code></td></tr>
+            <tr><th scope="row">{{#str}} exported, local_progressrecovery {{/str}}</th><td>{{exported}}</td></tr>
+            <tr><th scope="row">{{#str}} uploaded, local_progressrecovery {{/str}}</th><td>{{created}}</td></tr>
+            <tr><th scope="row">{{#str}} period, local_progressrecovery {{/str}}</th><td>{{period}} ({{timezone}})</td></tr>
+            <tr><th scope="row">{{#str}} sourceprefix, local_progressrecovery {{/str}}</th><td><code>{{prefix}}</code></td></tr>
+            <tr><th scope="row">{{#str}} extractor, local_progressrecovery {{/str}}</th><td>{{extractor}} ({{#str}} packageformat, local_progressrecovery {{/str}} {{format}})</td></tr>
+        </tbody>
+    </table>
+
+    <h3>{{#str}} compatibility, local_progressrecovery {{/str}}: <span class="label {{badge}}">{{compatibility}}</span></h3>
+    {{#hasglobal}}
+    <ul>
+        {{#global}}<li>{{text}}</li>{{/global}}
+    </ul>
+    {{/hasglobal}}
+    <table class="generaltable">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} component, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} rowsinperiod, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} compatibility, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} notes, local_progressrecovery {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#components}}
+            <tr>
+                <td>{{name}}</td>
+                <td>{{rows}}</td>
+                <td><span class="label {{badge}}">{{status}}</span></td>
+                <td>{{#reasons}}<div>{{text}}</div>{{/reasons}}</td>
+            </tr>
+            {{/components}}
+        </tbody>
+    </table>
+
+    <h3>{{#str}} integrity, local_progressrecovery {{/str}}</h3>
+    {{> local_progressrecovery/validation_result }}
+
+    <h3>{{#str}} content, local_progressrecovery {{/str}}</h3>
+    <table class="generaltable">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} table, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} file, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} role_changed, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} role_dependency, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} role_structure, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} role_evidence, local_progressrecovery {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#tables}}
+            <tr><td><code>{{table}}</code></td><td><code>{{file}}</code></td><td>{{changed}}</td><td>{{dependency}}</td><td>{{structure}}</td><td>{{evidence}}</td></tr>
+            {{/tables}}
+        </tbody>
+    </table>
+
+    <p>
+        <a class="btn btn-default" href="{{indexurl}}">{{#str}} back, local_progressrecovery {{/str}}</a>
+        {{#isactive}}<a class="btn btn-primary" href="{{compareurl}}">{{#str}} compare, local_progressrecovery {{/str}}</a>{{/isactive}}
+        {{#isactive}}<a class="btn btn-danger" href="{{deleteurl}}">{{#str}} deletepackage, local_progressrecovery {{/str}}</a>{{/isactive}}
+    </p>
+</div>

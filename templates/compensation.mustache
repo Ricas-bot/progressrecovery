@@ -1,0 +1,64 @@
+{{!
+    Compensação: o que falta desfazer, execução e resultado.
+}}
+<div class="local-progressrecovery">
+    <p><a href="{{recoverurl}}">{{#str}} recovery, local_progressrecovery {{/str}}</a> · {{filename}}</p>
+    <p>{{#str}} compensationintro, local_progressrecovery {{/str}}</p>
+    <p class="alert alert-warning">{{#str}} compensationlimits, local_progressrecovery {{/str}}</p>
+
+    {{^enabled}}<p class="alert alert-warning">{{#str}} error_recovery_disabled, local_progressrecovery {{/str}}</p>{{/enabled}}
+
+    {{#running}}
+    <div id="local-progressrecovery-compare">
+        <p id="local-progressrecovery-compare-status">{{#str}} compensating, local_progressrecovery {{/str}}…</p>
+        <div class="progress"><div class="progress-bar" id="local-progressrecovery-compare-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
+        <p class="alert alert-danger hidden" id="local-progressrecovery-compare-error"></p>
+        <button type="button" class="btn btn-primary hidden" id="local-progressrecovery-compare-resume">{{#str}} resume, local_progressrecovery {{/str}}</button>
+    </div>
+    {{/running}}
+
+    {{^running}}
+    <h3>{{#str}} compensationplan, local_progressrecovery {{/str}}</h3>
+    <table class="generaltable">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} table, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} compensationrevert, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} compensationirreversible, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} compensationreverted, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} compensationkept, local_progressrecovery {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#rows}}<tr><td><code>{{table}}</code></td><td>{{revert}}</td><td>{{irreversible}}</td><td>{{reverted}}</td><td>{{kept}}</td></tr>{{/rows}}
+        </tbody>
+    </table>
+    {{#finished}}<p>{{#str}} finished, local_progressrecovery {{/str}}: {{finished}}</p>{{/finished}}
+
+    {{#hasnotes}}
+    <h3>{{#str}} compensationnotes, local_progressrecovery {{/str}}</h3>
+    <table class="generaltable">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} table, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} sourceid, local_progressrecovery {{/str}}</th>
+                <th scope="col">{{#str}} notes, local_progressrecovery {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#notes}}<tr><td><code>{{table}}</code></td><td>{{sourceid}}</td><td><code>{{reason}}</code> {{detail}}</td></tr>{{/notes}}
+        </tbody>
+    </table>
+    {{/hasnotes}}
+
+    {{#canstart}}
+    <form method="post" action="{{formurl}}">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+        <input type="hidden" name="start" value="1">
+        <p><label><input type="checkbox" name="backup" value="1" required> {{#str}} recoverybackup, local_progressrecovery {{/str}}</label></p>
+        <p><label><input type="checkbox" name="understood" value="1" required> {{#str}} compensationunderstood, local_progressrecovery {{/str}}</label></p>
+        <button type="submit" class="btn btn-danger">{{#str}} compensationstart, local_progressrecovery {{/str}}</button>
+    </form>
+    {{/canstart}}
+    {{/running}}
+</div>
