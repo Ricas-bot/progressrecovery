@@ -297,6 +297,8 @@ class comparison_manager {
         $extra = [];
         if ($table === 'scorm_scoes_track') {
             $extra['sourcekeys'] = conflict_detector::scorm_source_keys($this->all_rows($table), $this->map);
+        } else if (in_array($table, ['course_modules_completion', 'grade_grades'], true)) {
+            $extra['sourcekeys'] = $this->extra_for('scorm_scoes_track')['sourcekeys'];
         } else if ($table === 'feedback_completed') {
             $extra['values'] = [];
             foreach ($this->all_rows('feedback_value') as $row) {

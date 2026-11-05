@@ -707,6 +707,8 @@ As quatro tabelas ficam juntas porque usam o mesmo código de escrita, já valid
 
 **Execução no sv1 (03/11):** 22 867 criados, sem saltados nem falhados. A comparação ficou com 22 867 Idênticos, 7 260 Ignorados e 0 Novos, e os outros componentes não mudaram.
 
+**Conferência (05/11):** a consulta às operações devolveu exactamente a previsão (22 867, 1 484 vazios, 4 493 sem objecto, e as mesmas datas). O evento de `p1062252` de 27/10 14:32 aparece nos *Registos* com o id do destino. No *Dedication*, a coluna de tempo de `p1062252` no curso 186 mostra 01:21:00, igual ao `total_time` do pacote (4 860 s): esta coluna vem do SCORM (`sumTime`), não dos logs. Os logs são confirmados pelas 111 emissões que passam `get_course_time`.
+
 ### 10.6 Sexta etapa da Fase 4: certificados (plugin v0.8.0)
 
 | Decisão | Porquê |
@@ -763,7 +765,56 @@ O tempo recuperado está certo: o valor em falta não é uma perda da recuperaç
 
 **Corrigido nesta revisão:** o pacote podia ser apagado durante uma recuperação, e o corte de uma mensagem de erro a meio de um carácter podia fazer falhar o passo.
 
+**Execução no sv1 (v0.9.0, 05/11):** desfeitos 113, 22 867, 547, 380, 485, 642, 186 e 33 949, e mantidos 4 respostas e 470 linhas SCORM, todos `no_previous`, sem `changed_since` nem `revert_failed`. Depois de desfazer, a comparação mostrou SCORM 33 949 + 11 023, Feedback 186 + 4, certificados 113 e eventos 22 867 *Novos*. Recuperadas as seis etapas outra vez, a comparação ficou igual à anterior.
+
+**Corrigido na v0.9.1:** as notas mostraram 393 *Alteradas* e 154 *Destino mais recente*, em vez de 547 por recuperar. Os totais desfeitos ficam com a data do recálculo. Na nova recuperação ficaram certos, porque as notas das actividades os recalcularam, mas as 154 operações continuavam como desfeitas, por isso o relatório estava errado. A etapa das notas passa a tratar sempre os totais desfeitos. **Validado a 05/11 no sv1:** `grade_grades` com 356 criados e 191 actualizados (os 154 totais e 37 notas), 547 no total, e nenhuma operação `reverted`. Depois de desfazer, o resultado acumulado deixa de contar as 4 respostas e as 470 linhas SCORM, que ficam como `kept` e continuam no destino.
+
 **Fica em aberto (P27):** o plugin guarda dados pessoais (`username`, `ip` no pacote) e não declara um `privacy provider`. A pasta `tests/` também está vazia, porque os testes estão no Extractor (`tools/`) e são simulados, sem PHPUnit no Totara.
+
+### 10.8 Fase 6: comparação na cópia do sv2 (05/11, plugin v0.9.1)
+
+**Cópia:** dump do sv2 de 05/11 às 20:03, restaurado no sv1 numa base recriada. A restauração foi confirmada pelo número de tabelas (848 no dump e na base) e pelas linhas da última tabela. O `mysqldump` precisou de `--no-tablespaces`, porque a conta `totara` não tem o privilégio `PROCESS`.
+
+| Componente | Na origem | Novos | Idênticos | Alterados | Destino mais recente | Ignorados | Inscrição pendente |
+|---|---|---|---|---|---|---|---|
+| Conclusão de actividades | 645 | 303 | 0 | 12 | 327 | 3 | |
+| Conclusão de cursos | 1 692 | 247 | 0 | 129 | 489 | 827 | |
+| Notas | 557 | 203 | 179 | 45 | 120 | 10 | |
+| SCORM | 45 195 | 16 192 | 16 746 | 161 | 11 873 | 223 | |
+| Feedback | 190 | 89 | 0 | 4 | 97 | 0 | |
+| Certificados | 113 | 63 | 0 | 0 | 50 | 0 | |
+| Registos de eventos | 30 127 | 22 876 | 0 | 0 | 0 | 7 251 | |
+| Inscrições | 21 | | | | | | 21 |
+
+Sem conflitos nem inválidos. Os totais na origem são os mesmos do sv1, e cada linha soma o total.
+
+**O que a cópia mostrou:**
+- **Primeiro *Destino mais recente* real** em todos os componentes, excepto nos eventos. Esses registos ficam como estão.
+- **SCORM (P23):** das 11 873 linhas, 5 217 não existem no destino. A regra trata a tentativa inteira de um utilizador num SCORM como trabalho do destino, por isso também deixa de fora as linhas da origem que o destino não tem. São 260 pares formando/curso, e em 18 deles há conclusões de actividade por recuperar no mesmo curso. Na maioria, as conclusões são de Feedback, certificados ou SCORM sem trabalho no sv2. Só em 3 casos a conclusão é do próprio SCORM que o formando recomeçou no sv2 sem o concluir:
+
+| Formando | Curso | SCORM | Origem | sv2 |
+|---|---|---|---|---|
+| `ana.baptista` | Fraude nos Sinistros 2026 | Avaliação das Aprendizagens (cm 1787) | aprovado | sem conclusão, tentativa a 30/10 |
+| `p1045686` | PN - Responsabilidade Civil 2026 | Avaliação, Módulo IV (cm 2044) | aprovado | sem conclusão, tentativa a 30/10 |
+| `p1045686` | PN - Solução Zurich Acidentes Pessoais 2026 | Conteúdo Pedagógico (cm 1960) | concluído | `0`, tentativa a 28/10 |
+
+Nestes 3 casos, a actividade fica concluída a partir da origem, mas a tentativa SCORM é a do sv2. Quando o formando voltar ao SCORM, o Totara recalcula a conclusão a partir da tentativa do sv2 (`completion_info::update_state`) e pode retirá-la. Vai ser testado no sv1 depois da etapa 3, e a decisão é do cliente.
+- **Certificados:** as 50 emissões são `code_differs`, ou seja, o formando já tem uma emissão nova no sv2. Fica a do destino, como decidido (9). No sv1 parado eram 4.
+- **Contas:** só `p1042465` é criada. As 8 contas sem progresso (`no_progress`) continuam por criar. `p1061101` já existe no sv2, com outro `id`, e passa a ter correspondência pelo `username`, por isso o caso fica resolvido.
+- **Eventos:** 22 876 *Novos*, mais 9 do que no sv1, e 7 251 ignorados, menos 9. Os ignorados são 5 990 `excluded_user`, 1 234 `system_event` e 27 `no_account`, das contas sem progresso. Os 9 são de contas que não existiam no sv1 e já existem no sv2.
+- **Inscrições:** 20 via grupo, de formandos com a ficha no pacote (modelo de 5.11), e `filipa.cardoso`. No sv1, a primeira etapa baixou as pendentes de 85 para 1.
+- **Etapa 1 (05/11):** a comparação seguinte deu 13 conclusões de actividade, 17 respostas e 27 conclusões de curso *Idênticas*, e as inscrições pendentes baixaram de 21 para 1 (`filipa.cardoso`). Seis conclusões de curso passaram de *Novo* a *Alterado*, provavelmente porque as novas inscrições criaram registos de conclusão vazios. A sincronização dos grupos correu só com `adhoc_task.php --execute='\totara_cohort\task\sync_dynamic_cohort_task'`, com o cron parado.
+  Resultado da etapa: 1 conta, 13 + 4 respostas, 13 conclusões de actividade, 13 critérios e 1 + 13 conclusões de curso, sem saltados nem falhados.
+- **Etapa 2 (05/11, 22:49):** 16 192 linhas SCORM criadas e 161 actualizadas, sem saltados nem falhados. A comparação seguinte deu 33 099 *Idênticos*, 11 873 *Destino mais recente* e 223 ignorados, como previsto. Os outros componentes não mudaram.
+- **Etapa 3 (05/11, 22:57):** 76 respostas, 290 + 12 conclusões de actividade, 214 critérios criados e 1 actualizado, e 134 conclusões de curso actualizadas, sem saltados nem falhados. Todas as conclusões de curso já tinham registo no destino, criado pela inscrição, por isso foram actualizações. A comparação seguinte deu, como previsto, 315, 376 e 93 *Idênticos*, com os mesmos *Destino mais recente* (327, 489 e 97).
+- **Etapa 4 (05/11, 23:02): defeito encontrado.** 220 notas criadas, 24 actualizadas e 4 *Diferentes da origem*, sem falhados. Mas a comparação seguinte mostrou 2 conclusões de actividade outra vez por concluir: as de `ana.baptista` (cm 1787) e `p1045686` (cm 2044), dois dos 3 casos da P23. O log tem os dois `course_module_completion_updated`, gravados durante a etapa.
+  **Causa:** `record_writer::activity_grade()` calcula a nota com `scorm_get_user_grades()`, que lê as tentativas do destino. Nestes casos, a tentativa é a do sv2 (*Destino mais recente*), por isso a nota ficou 50 em vez de 100 e 67 em vez de 83. Ao gravá-la, `grade_grade::notify_changed()` chama `completion_info::inform_grade_changed()`, e o Totara recalculou a conclusão a partir da tentativa do sv2. Os testes simulados não o apanharam, porque o simulador só mudava a conclusão quando a nota era vazia.
+  **Consequência:** a conclusão da actividade, a nota e o total de curso de um SCORM têm de seguir a mesma tentativa. Uma conclusão da origem sobre uma tentativa do sv2 não se mantém: o Totara volta a calculá-la sempre que a nota é recalculada.
+  **Decisão do cliente (05/11, P23 opção A) e correcção na v0.9.2:** quando o formando tem trabalho novo num SCORM do destino, a conclusão dessa actividade e a nota desse SCORM passam a *Destino mais recente*, com o motivo `scorm_dest_newer`, tanto na comparação como na reclassificação de cada lote. A conclusão do curso, os critérios e o certificado continuam a ser recuperados, porque o curso foi efectivamente concluído, e o Totara não os desfaz. Fica visível o curso concluído com essa actividade por concluir. O teste simulado passou a reproduzir o recálculo do Totara: só muda a conclusão quando o estado previsto pela nota é diferente do actual, e recalcula-o a partir das tentativas do destino. Antes da correcção, falhava como no sv1.
+- **Etapas 5 e 6 (05/11, 23:18), nesta mesma execução:** 22 876 eventos criados. 63 emissões criadas, das quais 3 *A rever* por tempo SCORM (`time_short`): `rui.almeida` (Junior Mais, 837 s de 5 400 s), `p1039468` (PN Auto, 1 296 s de 7 200 s) e `p1043306` (PN Acidentes de Trabalho, 5 481 s de 7 200 s). Os três estão nos 18 pares da P23. O tempo SCORM conta-se nas tentativas do destino, e nesses SCORMs ficou a tentativa do sv2, mais curta. `p1043306` já era um dos casos da P26 no sv1, com 6 605 s. `diogo.lopes`, o outro caso da P26, deixou de aparecer.
+  Nos dois formandos da P23, a conclusão do curso, os critérios e o certificado da origem mantiveram-se depois de a actividade voltar a ficar por concluir. O Totara não desfaz a conclusão de um curso.
+- **`bi_intellidata`:** `enabled = 0` na cópia do sv2 (P25).
+- **Ordenação (P28):** 832 tabelas em `utf8mb3_general_ci` e 22 em `utf8mb4_unicode_ci` (16 do sv2 e as 6 do plugin), com `dbcollation = utf8mb4_unicode_ci` no `config.php`. É o estado do sv2, e a recuperação não o altera. Uma coluna `utf8mb3` não guarda caracteres de 4 bytes, como emoji, mas o pacote não tem nenhum: os 48 ficheiros foram verificados a 05/11.
 
 ## 11. Riscos
 
@@ -791,10 +842,11 @@ O tempo recuperado está certo: o valor em falta não é uma perda da recuperaç
 | P21 | Antes da Fase 6, restaurar no sv1 uma cópia recente da BD do sv2 (`mysqldump --single-transaction`, sem bloquear a produção) | EDUdigital |
 | ~~P20~~ | ~~Eventos de 25/10~~ — **resolvido a 02/11:** todos do `admin`, sem progresso de utilizadores reais. O pacote de 26/10 a 28/10 serve | — |
 | ~~P22~~ | ~~Contas manuais com progresso~~ — **resolvido:** `fernando.gomes` e `daniela.felgueiras` são formandos, por isso o progresso é recuperado. Excluídos: `pedro.edu` e `admin` | — |
-| P23 | SCORM com trabalho novo no destino fica como está, mesmo que a conclusão da actividade venha da origem. Quantificar com a cópia do sv2 antes de decidir se precisa de tratamento | EDUdigital |
+| P23 | **Decidido a 05/11 (opção A):** a conclusão e a nota de um SCORM recomeçado no destino seguem a tentativa do destino. O curso e o certificado são recuperados. Implementado na v0.9.2, por validar na execução limpa (10.8) | EDUdigital / Zurich |
 | P24 | Confirmar que o cron corre no sv1, porque a sincronização dos grupos depende dele | EDUdigital |
-| P26 | Duas emissões *A rever* por tempo SCORM (10.6): confirmar na origem porque foram emitidas, e o cliente decide como ficam | EDUdigital / Zurich |
+| P26 | **Decidido a 05/11: não inventar tempo.** As emissões *A rever* por tempo SCORM (10.6, 10.8) são recuperadas e ficam assinaladas no relatório. O formando descarrega o certificado quando tiver o tempo exigido no destino | EDUdigital / Zurich |
 | P27 | Decidir se o plugin precisa de um `privacy provider` e por quanto tempo se guardam o pacote e os resultados, antes da produção (10.7) | EDUdigital / Zurich |
+| P28 | O sv2 tem a maior parte das tabelas em `utf8mb3_general_ci` e o `config.php` em `utf8mb4_unicode_ci` (10.8). Não afecta esta recuperação, mas convém corrigir fora deste projecto | EDUdigital |
 | P25 | Antes da produção, confirmar se o `bi_intellidata` exporta os eventos recuperados, tanto os `user_graded` com a data da recuperação como os logs antigos com `id` novo | EDUdigital |
 | ~~P5~~ | ~~Programas/Certificações~~ — **resolvido a 30/10:** apenas cursos; fora do âmbito | — |
 | ~~P6~~ | ~~Tentativas de quiz em curso~~ — **resolvido a 02/11:** recuperar tal como estão quando o utilizador não tem tentativas novas no destino. Sem efeito prático por agora: 0 tentativas no período | — |
@@ -819,5 +871,6 @@ O tempo recuperado está certo: o valor em falta não é uma perda da recuperaç
 - **Fase 2:** validada a 02/11 no sv1 com o pacote real (assinatura válida, *Compatível*, 0 pendentes).
 - **Fase 3 — motor de comparação:** validada a 02/11 no sv1 com o pacote real (plugin v0.2.0). As 78 604 linhas do relatório batem certo com o diagnóstico em todos os componentes (645, 1 207, 485, 557, 34 614 + 10 581, 190, 113, 30 127). 0 inválidos e 0 conflitos. 0 *Destino mais recente*, como esperado num servidor parado a 24/10: esta regra só é exercida na Fase 6. Três contas a criar no sv1 (`p1017706`, `p1042465`, `p1062252`); no sv2 será só `p1042465`.
 - **Inscrições pendentes no sv1:** 85, de 36 utilizadores. 35 têm a ficha concluída no pacote, o que confirma o modelo de 5.11. Só `filipa.cardoso` (curso 206) não tem inscrição nem ficha: 2 linhas SCORM alteradas e 10 iguais. O progresso é recuperado e fica listado como pendente. **Esclarecido a 03/11:** é gestora e testa cursos, por isso não é uma formanda sem acesso, e a linha pendente é informativa.
-- **Fase 4 — recuperação:** etapa 1 (contas e fichas, v0.3.0) validada a 03/11 no sv1. Etapa 2 (tentativas SCORM, v0.4.0) validada a 03/11 no sv1. Etapa 3 (Feedback e conclusões, v0.5.1) validada a 03/11 no sv1. Etapa 4 (notas, v0.6.2) validada a 03/11 no sv1, a partir da cópia anterior à etapa (10.4). Etapa 5 (logs, v0.7.0) executada no sv1, com os números previstos (10.5). Etapa 6 (certificados, v0.8.0) validada a 03/11 no sv1, com duas emissões a rever (10.6, P26). 
-- **Fase 5 — segurança e auditoria:** compensação, relatório e revisão de segurança implementados (v0.9.0), por validar no sv1 (10.7). Segue-se a Fase 6, numa cópia recente do sv2 (P21).
+- **Fase 4 — recuperação:** etapa 1 (contas e fichas, v0.3.0) validada a 03/11 no sv1. Etapa 2 (tentativas SCORM, v0.4.0) validada a 03/11 no sv1. Etapa 3 (Feedback e conclusões, v0.5.1) validada a 03/11 no sv1. Etapa 4 (notas, v0.6.2) validada a 03/11 no sv1, a partir da cópia anterior à etapa (10.4). Etapa 5 (logs, v0.7.0) validada a 05/11 no sv1 (10.5). Etapa 6 (certificados, v0.8.0) validada a 03/11 no sv1, com duas emissões a rever (10.6, P26). 
+- **Fase 5 — segurança e auditoria:** validada a 05/11 no sv1 (v0.9.1): compensação, nova recuperação, relatório e revisão de segurança (10.7). Segue-se a Fase 6, numa cópia recente do sv2 (P21).
+- **Fase 6 — validação final:** cópia do sv2 de 05/11 restaurada no sv1, e comparação feita sem conflitos nem inválidos (10.8). Na primeira execução, a etapa 4 revelou um defeito nos SCORMs recomeçados no destino. Foi corrigido na v0.9.2, depois das decisões P23 e P26. Segue-se uma execução limpa de todas as etapas, a partir do mesmo dump.

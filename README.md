@@ -3,7 +3,7 @@
 Plugin local para Totara 19, instalado no servidor de destino. Recebe, valida, compara e recupera os dados
 exportados pelo **Totara Recovery Extractor**.
 
-> **Estado (03/11/2026):** Fases 2 e 3 validadas no sv1. Fase 4 em curso: as etapas 1 a 4 (contas e fichas, tentativas SCORM, Feedback e conclusões, notas) estão validadas no sv1, e as etapas 5 e 6 (registos de eventos e certificados) foram executadas no sv1. Fase 5 implementada, por validar no sv1. **O plugin só altera dados académicos com a opção *Permitir a recuperação nesta instalação* activa, desligada por omissão.**
+> **Estado (03/11/2026):** Fases 2 e 3 validadas no sv1. Fase 4 em curso: as etapas 1 a 4 (contas e fichas, tentativas SCORM, Feedback e conclusões, notas) estão validadas no sv1, e as etapas 5 e 6 (registos de eventos e certificados) foram executadas no sv1. Fase 5 validada no sv1. Segue-se a Fase 6, numa cópia recente do sv2. **O plugin só altera dados académicos com a opção *Permitir a recuperação nesta instalação* activa, desligada por omissão.**
 
 ## Instalação
 

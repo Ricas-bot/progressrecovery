@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_progressrecovery';
-$plugin->version   = 2026110308; // Fase 5: compensação e relatório das operações.
+$plugin->version   = 2026110501; // Fase 6: a conclusão e a nota de um SCORM seguem a tentativa do destino.
 $plugin->requires  = 2025070800; // Totara 19.
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.9.0';
+$plugin->release   = '0.9.2';
 $plugin->dependencies = [];

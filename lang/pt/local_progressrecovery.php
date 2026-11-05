@@ -208,6 +208,7 @@ $string['itemreason_fills_completion'] = 'Concluído na origem e por concluir no
 $string['itemreason_enrolment_only'] = 'Só de inscrição: o Totara cria esta linha';
 $string['itemreason_user_to_create'] = 'Exige criar a conta';
 $string['itemreason_dest_locked'] = 'Nota bloqueada ou alterada manualmente no destino';
+$string['itemreason_scorm_dest_newer'] = 'SCORM recomeçado no destino: a conclusão e a nota seguem a tentativa do destino';
 $string['itemreason_would_regress'] = 'Passaria de concluído a incompleto';
 $string['itemreason_values_differ'] = 'Respostas diferentes com a mesma data';
 $string['itemreason_anonymous_other_response'] = 'Já existe outra resposta anónima deste utilizador';

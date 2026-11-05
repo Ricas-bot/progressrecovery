@@ -208,6 +208,7 @@ $string['itemreason_fills_completion'] = 'Complete at the source and not yet com
 $string['itemreason_enrolment_only'] = 'Enrolment only: Totara creates this row';
 $string['itemreason_user_to_create'] = 'Needs the account to be created';
 $string['itemreason_dest_locked'] = 'Grade locked or manually changed at the destination';
+$string['itemreason_scorm_dest_newer'] = 'SCORM restarted at the destination: completion and grade follow the destination attempt';
 $string['itemreason_would_regress'] = 'Would go from complete to incomplete';
 $string['itemreason_values_differ'] = 'Different answers with the same date';
 $string['itemreason_anonymous_other_response'] = 'Another anonymous response from this user already exists';

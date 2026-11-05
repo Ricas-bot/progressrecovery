@@ -219,7 +219,32 @@ class recovery_manager {
             $out[$row->source_table][$row->classification] = (int)$row->n;
         }
         $rows->close();
+        if ($scope === self::SCOPE_GRADES) {
+            $totals = self::reverted_totals($packageid, (int)$compare->id);
+            if ($totals > 0) {
+                $out['grade_grades'][conflict_detector::CHANGED] = ($out['grade_grades'][conflict_detector::CHANGED] ?? 0) + $totals;
+            }
+        }
         return $out;
+    }
+
+    /**
+     * Depois de desfeito, um total fica com a data do recálculo e a comparação vê-o como Destino mais recente. Depois
+     * de recuperadas as notas, vê-o como Idêntico. Em ambos os casos, o total tem de voltar a ser tratado.
+     *
+     * @param int $packageid
+     * @param int $comparejob
+     * @return int totais desfeitos que a comparação não classifica como Novo nem Alterado
+     */
+    private static function reverted_totals(int $packageid, int $comparejob): int {
+        global $DB;
+        return (int)$DB->count_records_sql("SELECT COUNT(*)
+                                              FROM {" . self::OPS . "} o
+                                              JOIN {" . comparison_manager::ITEMS . "} i ON i.jobid = ? AND i.source_table = o.source_table AND i.source_recordid = o.source_recordid
+                                              JOIN {grade_grades} gg ON gg.id = o.dest_recordid
+                                              JOIN {grade_items} gi ON gi.id = gg.itemid
+                                             WHERE o.packageid = ? AND o.source_table = ? AND o.status = ? AND gi.itemtype = ? AND i.classification NOT IN (?, ?)",
+            [$comparejob, $packageid, 'grade_grades', self::OP_REVERTED, 'course', conflict_detector::NEW, conflict_detector::CHANGED]);
     }
 
     /**
@@ -461,11 +486,16 @@ class recovery_manager {
         list($in, $params) = $DB->get_in_or_equal($ids);
         $approved = $DB->get_records_select(comparison_manager::ITEMS, "jobid = ? AND source_table = ? AND source_recordid $in",
             array_merge([$this->comparejob(), $table], $params), '', 'source_recordid, classification, courseid');
+        $reverted = [];
+        if ($type === 'grades_course') {
+            $reverted = $DB->get_records_select(self::OPS, "packageid = ? AND source_table = ? AND status = ? AND source_recordid $in",
+                array_merge([(int)$this->package->id, $table, self::OP_REVERTED], $params), '', 'source_recordid');
+        }
         $scope = [];
         foreach ($rows as $row) {
             $item = $approved[(int)$row['sid']] ?? null;
             if ($item !== null && ($this->params['courses'] === null || in_array((int)$item->courseid, $this->params['courses'], true))
-                    && in_array($item->classification, [conflict_detector::NEW, conflict_detector::CHANGED], true)) {
+                    && (in_array($item->classification, [conflict_detector::NEW, conflict_detector::CHANGED], true) || isset($reverted[(int)$row['sid']]))) {
                 $scope[] = $row;
             }
         }
@@ -499,9 +529,9 @@ class recovery_manager {
         if ($table === 'logstore_standard_log') {
             $extra['skip_existing'] = true;
         }
-        if ($table === 'scorm_scoes_track') {
+        if (in_array($table, ['scorm_scoes_track', 'course_modules_completion', 'grade_grades'], true)) {
             if ($this->sourcekeys === null) {
-                $this->sourcekeys = conflict_detector::scorm_source_keys($this->all_rows($table), $map);
+                $this->sourcekeys = conflict_detector::scorm_source_keys($this->all_rows('scorm_scoes_track'), $map);
             }
             $extra['sourcekeys'] = $this->sourcekeys;
         }
@@ -634,7 +664,7 @@ class recovery_manager {
             $processed++;
             try {
                 $transaction = $DB->start_delegated_transaction();
-                $existed = $approved[$sid]->classification === conflict_detector::CHANGED;
+                $existed = $approved[$sid]->classification !== conflict_detector::NEW;
                 $this->save_grade_aware_op($table, $sid, $writer->course_total($row['d'], $existed));
                 $transaction->allow_commit();
             } catch (\Throwable $e) {

@@ -39,6 +39,12 @@ class conflict_detector {
     public const IGNORED = 'ignored';
     public const PENDING_ENROL = 'pending_enrol';
 
+    /**
+     * O Totara calcula a conclusão e a nota de um SCORM a partir das tentativas do destino, e volta a calculá-las sempre
+     * que a nota muda (completion_info::inform_grade_changed). Por isso seguem a tentativa que fica no destino (P23).
+     */
+    private const FOLLOW_SCORM_ATTEMPT = ['course_modules_completion', 'grade_grades'];
+
     /** Tabelas em que a linha se identifica por utilizador + chave. */
     private const KEYED = [
         'course_modules_completion' => [
@@ -154,7 +160,14 @@ class conflict_detector {
      */
     public function classify(string $table, array $rows, array $extra = []): array {
         if (isset(self::KEYED[$table])) {
-            return $this->classify_keyed($table, $rows);
+            $items = $this->classify_keyed($table, $rows);
+            if (in_array($table, self::FOLLOW_SCORM_ATTEMPT, true)) {
+                if (!isset($extra['sourcekeys'])) {
+                    throw new \coding_exception('sourcekeys em falta para ' . $table);
+                }
+                $items = $this->follow_scorm_attempt($table, array_values($rows), $items, $extra['sourcekeys']);
+            }
+            return $items;
         }
         $method = 'classify_' . $table;
         return $this->$method($rows, $extra);
@@ -291,6 +304,90 @@ class conflict_detector {
      * @param array $rows
      * @param array $extra sourcekeys: chaves e datas de todas as linhas SCORM do pacote
      */
+    /**
+     * Linhas SCORM do destino, e as unidades utilizador|SCORM com trabalho novo no destino: uma linha que não veio da
+     * origem, com data posterior à cópia.
+     *
+     * @param int[] $userids utilizadores no destino
+     * @param int[] $scormids SCORM no destino
+     * @param array $sourcekeys chaves e datas de todas as linhas SCORM do pacote
+     * @return array [linhas por chave, unidades com trabalho novo]
+     */
+    private function scorm_dest_tracks(array $userids, array $scormids, array $sourcekeys): array {
+        global $DB;
+        $dest = [];
+        $newer = [];
+        if (!$userids || !$scormids) {
+            return [$dest, $newer];
+        }
+        list($inuser, $paramsuser) = $DB->get_in_or_equal($userids);
+        list($inscorm, $paramsscorm) = $DB->get_in_or_equal($scormids);
+        $found = $DB->get_records_select('scorm_scoes_track', "userid $inuser AND scormid $inscorm", array_merge($paramsuser, $paramsscorm),
+            '', 'id, userid, scormid, scoid, attempt, element, value, timemodified');
+        foreach ($found as $record) {
+            $key = $record->userid . '|' . $record->scormid . '|' . $record->scoid . '|' . $record->attempt . '|' . $record->element;
+            $dest[$key] = $record;
+            if ((int)$record->timemodified >= $this->copytime && ($sourcekeys[$key] ?? null) !== (int)$record->timemodified) {
+                $newer[$record->userid . '|' . $record->scormid] = true;
+            }
+        }
+        return [$dest, $newer];
+    }
+
+    /**
+     * Uma conclusão ou nota de SCORM que seria escrita passa a Destino mais recente quando o utilizador tem trabalho novo
+     * nesse SCORM no destino. Recuperá-la não serve: o Totara recalcula-a a partir da tentativa do destino.
+     *
+     * @param string $table course_modules_completion ou grade_grades
+     * @param array $rows linhas do pacote, pela mesma ordem dos itens
+     * @param array $items itens já classificados
+     * @param array $sourcekeys chaves e datas de todas as linhas SCORM do pacote
+     * @return array itens
+     */
+    private function follow_scorm_attempt(string $table, array $rows, array $items, array $sourcekeys): array {
+        global $DB;
+        $field = $table === 'grade_grades' ? 'itemid' : 'coursemoduleid';
+        $entity = $table === 'grade_grades' ? 'grade_items' : 'course_modules';
+        $targets = [];
+        foreach ($items as $index => $item) {
+            if (in_array($item['classification'], [self::NEW, self::CHANGED], true) && $item['dest_userid'] !== null) {
+                $entry = $this->map->get($entity, (int)$rows[$index]['d'][$field]);
+                if (entity_map::usable($entry)) {
+                    $targets[$index] = (int)$entry->dest_id;
+                }
+            }
+        }
+        if (!$targets) {
+            return $items;
+        }
+        list($in, $params) = $DB->get_in_or_equal(array_values(array_unique($targets)));
+        if ($table === 'grade_grades') {
+            $found = $DB->get_records_sql("SELECT id, iteminstance AS scormid FROM {grade_items} WHERE id $in AND itemtype = ? AND itemmodule = ?",
+                array_merge($params, ['mod', 'scorm']));
+        } else {
+            $found = $DB->get_records_sql("SELECT cm.id, cm.instance AS scormid FROM {course_modules} cm JOIN {modules} m ON m.id = cm.module WHERE cm.id $in AND m.name = ?",
+                array_merge($params, ['scorm']));
+        }
+        $users = [];
+        $scorms = [];
+        foreach ($targets as $index => $destid) {
+            if (!isset($found[$destid])) {
+                unset($targets[$index]);
+                continue;
+            }
+            $users[$items[$index]['dest_userid']] = true;
+            $scorms[(int)$found[$destid]->scormid] = true;
+        }
+        list(, $newer) = $this->scorm_dest_tracks(array_keys($users), array_keys($scorms), $sourcekeys);
+        foreach ($targets as $index => $destid) {
+            if (isset($newer[$items[$index]['dest_userid'] . '|' . (int)$found[$destid]->scormid])) {
+                $items[$index]['classification'] = self::DEST_NEWER;
+                $items[$index]['reason'] = 'scorm_dest_newer';
+            }
+        }
+        return $items;
+    }
+
     private function classify_scorm_scoes_track(array $rows, array $extra): array {
         global $DB;
         $data = array_column($rows, 'd');
@@ -307,22 +404,7 @@ class conflict_detector {
                 $scorms[(int)$this->map->get('scorm', (int)$d['scormid'])->dest_id] = true;
             }
         }
-        $dest = [];
-        $newer = [];
-        if ($users) {
-            list($inuser, $paramsuser) = $DB->get_in_or_equal(array_keys($users));
-            list($inscorm, $paramsscorm) = $DB->get_in_or_equal(array_keys($scorms));
-            $found = $DB->get_records_select('scorm_scoes_track', "userid $inuser AND scormid $inscorm", array_merge($paramsuser, $paramsscorm),
-                '', 'id, userid, scormid, scoid, attempt, element, value, timemodified');
-            foreach ($found as $record) {
-                $dest[$record->userid . '|' . $record->scormid . '|' . $record->scoid . '|' . $record->attempt . '|' . $record->element] = $record;
-                // Uma linha do destino que não veio da origem, com data posterior à cópia, é trabalho novo no destino.
-                $key = $record->userid . '|' . $record->scormid . '|' . $record->scoid . '|' . $record->attempt . '|' . $record->element;
-                if ((int)$record->timemodified >= $this->copytime && ($extra['sourcekeys'][$key] ?? null) !== (int)$record->timemodified) {
-                    $newer[$record->userid . '|' . $record->scormid] = true;
-                }
-            }
-        }
+        list($dest, $newer) = $this->scorm_dest_tracks(array_keys($users), array_keys($scorms), $extra['sourcekeys']);
 
         $items = [];
         foreach ($rows as $row) {
